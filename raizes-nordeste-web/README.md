@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Raízes do Nordeste - Rede de Franquias | API Back-end
 
-## Getting Started
+## 1. Análise do Problema e Requisitos
+A Rede Raízes do Nordeste é uma rede de franquias com unidades em Porto Alegre, Recife e Salvador. O problema é a falta de controle centralizado de estoque distribuído e vendas multicanal (loja física, e-commerce, WhatsApp).
+Requisitos atendidos:
+- Multicanalidade: API única atendendo todos os canais
+- Franquias: estoque controlado por unidade/franquia
+- Fidelidade: programa de pontos para clientes recorrentes
+- Pagamento Integrado: gateway mockado para simulação
+- LGPD e Auditoria
 
-First, run the development server:
+## 2. Modelagem e Arquitetura de Back-end
+Arquitetura em camadas: Routes -> Controllers -> Services -> Prisma ORM -> SQLite
 
+Entidades do Domínio:
+- Produto (id, nome, preço, categoria)
+- UnidadeFranquia (id, cidade, estado)
+- Estoque (produtoId, unidadeId, quantidade) - representa estoque distribuído
+- Cliente (id, nome, cpf anonimizado, email)
+- Pedido (id, clienteId, unidadeId, total, status)
+- Fidelidade (clienteId, pontos)
+- Usuario (id, email, perfil: ADMIN/GERENTE/VENDEDOR)
+- LogAuditoria (acao, usuarioId, data)
+
+Diagrama de caso de uso: Cliente faz pedido -> Sistema verifica estoque da unidade -> Gera pontos fidelidade -> Processa pagamento mock -> Registra log de auditoria.
+
+## 3. Implementação da API e Regras de Negócio
+Base: Node.js, Express, TypeScript, Prisma, SQLite, Swagger
+
+Rotas Principais:
+- GET /produtos - lista com filtro por unidade
+- POST /produtos - cria produto
+- POST /pedidos - **Regra:** verifica se `Estoque.quantidade >= pedido.quantidade` na unidade, se não, retorna 400 Estoque insuficiente
+- POST /pedidos/pagamento - **Regra:** pagamento mock sempre retorna { status: 'aprovado', transacaoId: uuid }
+- POST /fidelidade/adicionar - **Regra:** 1 ponto a cada R$10,00 do pedido
+- GET /estoque/:unidadeId - estoque por unidade
+
+## 4. Segurança, LGPD, Logs e Auditoria
+- Autenticação: JWT previsto no middleware `authMiddleware` (ver src/middlewares/auth.ts)
+- Autorização: perfis ADMIN, GERENTE, VENDEDOR com controle de rota
+- LGPD: CPF anonimizado, rota DELETE /clientes/:id para direito ao esquecimento, dados sensíveis não retornados no GET
+- Logs Estruturados: Morgan + Winston para logs de requisições
+- Auditoria: tabela LogAuditoria registra toda criação/atualização de pedidos e produtos com usuarioId e timestamp
+
+## 5. Plano de Testes (API)
+Testes manuais via Swagger e Postman. Coleção em `postman_collection.json`
+
+| # | Cenário | Método | Entrada | Saída Esperada |
+|---|---------|--------|---------|----------------|
+| 1 | Criar produto válido | POST /produtos | {nome, preco} | 201 Created |
+| 2 | Criar produto sem nome (negativo) | POST /produtos | {} | 400 Bad Request |
+| 3 | Listar produtos por unidade | GET /produtos?unidade=POA | - | 200 + array filtrado |
+| 4 | Pedido com estoque insuficiente (negativo) | POST /pedidos | qtd > estoque | 400 Estoque insuficiente |
+| 5 | Pedido válido gera fidelidade | POST /pedidos | total R$100 | 201 + 10 pontos |
+| 6 | Pagamento mock | POST /pedidos/pagamento | - | 200 aprovado |
+
+Evidências: Prints em /docs e execução via Postman.
+
+## 6. Entrega Técnica e Documentação
+- GitHub: https://github.com/Anderson-dutra-dev/raizes-do-nordeste
+- Como rodar:
 ```bash
+npm install
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
