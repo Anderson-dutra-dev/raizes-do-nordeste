@@ -1,29 +1,23 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express'
+import jwt from 'jsonwebtoken'
 
-interface TokenPayload {
-  id: string;
-  role: string;
-  iat: number;
-  exp: number;
+export function auth(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization
+  if (!header) return res.status(401).json({ error: 'Token não fornecido - LGPD: acesso não auditado' })
+  
+  const [, token] = header.split(' ')
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'raizes_secret')
+    // @ts-ignore
+    req.user = decoded
+    next()
+  } catch {
+    return res.status(401).json({ error: 'Token inválido' })
+  }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const { authorization } = req.headers;
-
-  if (!authorization) {
-    return res.status(401).json({ error: 'Token não fornecido' });
-  }
-
-  const token = authorization.replace('Bearer ', '');
-
-  try {
-    const data = jwt.verify(token, process.env.JWT_SECRET as string);
-    const { id, role } = data as TokenPayload;
-    
-    req.user = { id, role };
-    return next();
-  } catch {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  // @ts-ignore
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Acesso restrito a ADMIN' })
+  next()
 }

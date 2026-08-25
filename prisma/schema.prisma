@@ -3,25 +3,181 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL")
 }
 
-model Usuario {
-  id    Int    @id @default(autoincrement())
-  nome  String
+enum Role {
+  ADMIN
+  MANAGER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDENTE
+  PAGO
+  ENVIADO
+  CANCELADO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+}
+
+model User {
+  id String @id @default(uuid())
+  nome String
   email String @unique
   senha String
-  tipo  String @default("USER")
+  cpf String? @unique // LGPD: dado sensível - não retornar na API
+  role Role @default(CUSTOMER)
+  lgpdConsent Boolean @default(false)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  loyaltyAccount LoyaltyAccount?
+  orders Order[]
+  auditLogs AuditLog[]
+
+  @@map("users")
 }
 
-model Produto {
-  id          Int      @id @default(autoincrement())
-  nome        String
-  descricao   String?
-  preco       Decimal  @db.Decimal(10, 2)
-  estoque     Int      @default(0)
-  imagemUrl   String?
-  criadoEm    DateTime @default(now())
+model Franchise {
+  id String @id @default(uuid())
+  nome String // Ex: Matriz Recife, Filial Salvador
+  cidade String
+  estado String
+  canal String // MULTICANALIDADE: loja_fisica, ecommerce, whatsapp
+  criadoEm DateTime @default(now())
+
+  stocks Stock[]
+  orders Order[]
+
+  @@map("franchises")
+}
+
+model Product {
+  id String @id @default(uuid())
+  nome String
+  descricao String?
+  preco Decimal @db.Decimal(10, 2)
+  imagemUrl String?
+  sku String @unique
+  criadoEm DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  stocks Stock[]
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// ESTOQUE DISTRIBUÍDO POR UNIDADE
+model Stock {
+  id String @id @default(uuid())
+  quantidade Int @default(0)
+
+  productId String
+  product Product @relation(fields: [productId], references: [id])
+
+  franchiseId String
+  franchise Franchise @relation(fields: [franchiseId], references: [id])
+
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([productId, franchiseId])
+  @@map("stocks")
+}
+
+model Order {
+  id String @id @default(uuid())
+  status OrderStatus @default(PENDENTE)
+  total Decimal @db.Decimal(10,2)
+  canal String // onde o pedido foi feito
+
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  franchiseId String
+  franchise Franchise @relation(fields: [franchiseId], references: [id])
+
+  items OrderItem[]
+  payment Payment?
+
+  criadoEm DateTime @default(now())
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+  quantidade Int
+  precoUnit Decimal @db.Decimal(10,2)
+
+  orderId String
+  order Order @relation(fields: [orderId], references: [id])
+
+  productId String
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// PAGAMENTO MOCKADO INTEGRADO
+model Payment {
+  id String @id @default(uuid())
+  status PaymentStatus @default(PENDENTE)
+  metodo String // PIX, CARTAO, BOLETO_MOCK
+  transactionId String? @unique // id do mock
+  valor Decimal @db.Decimal(10,2)
+
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id])
+
+  criadoEm DateTime @default(now())
+
+  @@map("payments")
+}
+
+// FIDELIDADE
+model LoyaltyAccount {
+  id String @id @default(uuid())
+  pontos Int @default(0)
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+
+  transactions LoyaltyTransaction[]
+
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id String @id @default(uuid())
+  pontos Int
+  descricao String
+  criadoEm DateTime @default(now())
+
+  accountId String
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+// AUDITORIA E LOGS ESTRUTURADOS
+model AuditLog {
+  id String @id @default(uuid())
+  acao String // CREATE_PRODUCT, PAYMENT_APPROVED
+  entidade String
+  entidadeId String?
+  dados Json? // snapshot do que mudou
+  ip String?
+  criadoEm DateTime @default(now())
+
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }

@@ -1,75 +1,31 @@
-# React + TypeScript + Vite
+# Raízes do Nordeste - Rede de Franquias
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+API Back-end - UNINTER - Sistema para gestão de franquias com estoque distribuído, multicanalidade, pagamento e fidelidade.
 
-Currently, two official plugins are available:
+## 1. Problema
+Centralizar operações de franquias em Recife, Salvador, Fortaleza, com vendas por loja_fisica, ecommerce e whatsapp.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 2. Arquitetura
+Camadas: Controller -> Prisma -> PostgreSQL
+Entidades: User, Franchise, Product, Stock (productId + franchiseId unique), Order, OrderItem, Payment, LoyaltyAccount, LoyaltyTransaction, AuditLog
 
-## React Compiler
+## 3. Regras
+- Estoque validado por franquia
+- Baixa atômica em transação
+- Fidelidade: 1 ponto a cada R$10
+- Pagamento mock: 80% aprovado
+- Perfis: ADMIN e CUSTOMER com JWT
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 4. Segurança e LGPD
+JWT, bcrypt, campo lgpdConsent, CPF não retornado em listagens, AuditLog com ip e userId, logs no console.
 
-## Expanding the ESLint configuration
+## 5. Como Rodar
+npm install
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+API: http://localhost:3000
+Docs: http://localhost:3000/docs
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+## 6. Entrega
+GitHub + README + Swagger + Postman Collection
