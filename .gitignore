@@ -1,1 +1,9 @@
 node_modules
+
+prisma/prisma/dev.db
+.env
+src/.env
+prisma/dev.db
+prisma/prisma/dev.db
+.env
+src/.env
