@@ -59,7 +59,10 @@ Evidências: Prints em /docs e execução via Postman.
 ## 6. Entrega Técnica e Documentação
 - GitHub: https://github.com/Anderson-dutra-dev/raizes-do-nordeste
 - Como rodar:
+cp .env.example .env
 ```bash
 npm install
 npx prisma migrate dev
+npx prisma db seed
 npm run dev
+# Swagger: http://localhost:3000/docs
