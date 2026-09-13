@@ -1,32 +1,69 @@
 {
   "info": {
-    "name": "Raizes do Nordeste API",
+    "name": "Raizes do Nordeste - API Completa (Entrega Final)",
+    "description": "Cenarios: CRUD, Estoque Suficiente, Estoque Insuficiente, CPF Anonimizado, LGPD, Logs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Health",
+      "name": "00 - Health",
       "request": { "method": "GET", "url": "http://localhost:3000/" }
     },
     {
-      "name": "Listar Produtos",
+      "name": "01 - Listar Produtos",
       "request": { "method": "GET", "url": "http://localhost:3000/produtos" }
     },
     {
-      "name": "Criar Produto",
+      "name": "02 - Criar Produto COM estoque",
       "request": {
         "method": "POST",
         "url": "http://localhost:3000/produtos",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Queijo Coalho\",\n  \"description\": \"Artesanal\",\n  \"price\": 25\n}"
+          "raw": "{\n  \"nome\": \"Queijo Coalho 500g\",\n  \"descricao\": \"Artesanal\",\n  \"preco\": 35.90,\n  \"estoque\": 50\n}"
         }
       }
     },
     {
-      "name": "Docs Swagger",
+      "name": "03 - Pedido SUCESSO - estoque suficiente",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/pedidos",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": 1,\n  \"itens\": [{ \"produtoId\": 1, \"quantidade\": 2 }]\n}"
+        }
+      }
+    },
+    {
+      "name": "04 - Pedido ERRO - estoque insuficiente",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/pedidos",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": 1,\n  \"itens\": [{ \"produtoId\": 1, \"quantidade\": 9999 }]\n}"
+        }
+      }
+    },
+    {
+      "name": "05 - Clientes CPF Anonimizado LGPD",
+      "request": { "method": "GET", "url": "http://localhost:3000/clientes" }
+    },
+    {
+      "name": "06 - LGPD Direito Esquecimento",
+      "request": { "method": "DELETE", "url": "http://localhost:3000/clientes/1/anonimizar" }
+    },
+    {
+      "name": "07 - Swagger Docs",
       "request": { "method": "GET", "url": "http://localhost:3000/docs" }
+    },
+    {
+      "name": "08 - Logs Auditoria",
+      "request": { "method": "GET", "url": "http://localhost:3000/logs" }
     }
   ]
 }
